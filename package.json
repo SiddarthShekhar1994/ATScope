@@ -1,0 +1,47 @@
+{
+  "name": "atscope",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.58",
+    "@ai-sdk/openai": "^4.0.71",
+    "@ai-sdk/rsc": "^3.0.107",
+    "@tanstack/react-virtual": "^3.14.13",
+    "@upstash/ratelimit": "^2.1.0",
+    "@upstash/redis": "^1.38.4",
+    "ai": "^7.0.107",
+    "diff": "^9.0.0",
+    "docx": "^9.7.1",
+    "jszip": "^3.10.2",
+    "mammoth": "^1.12.3",
+    "motion": "^13.4.0",
+    "next": "15.5.25",
+    "next-view-transitions": "^0.3.5",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289",
+    "react": "^19.1.9",
+    "react-dom": "^19.1.9",
+    "react-dropzone": "^20.1.2",
+    "unpdf": "^1.8.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22.20.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.25",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.1"
+  }
+}

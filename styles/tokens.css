@@ -1,0 +1,71 @@
+/*
+ * Design tokens — direction B, "technical instrument".
+ * Very dark warm gray, off-white text, one amber accent, mono numerals.
+ * Borders are tinted toward the background hue via alpha on the foreground.
+ */
+:root {
+  color-scheme: dark;
+
+  --bg: #121110;
+  --bg-1: #171614;
+  --bg-2: #1c1a17;
+  --bg-3: #22201c;
+  --bg-4: #2b2823;
+
+  --fg: #ece8e1;
+  --fg-1: #b9b3a8;
+  --fg-2: #948d81;
+  --fg-3: #5a554d;
+
+  --accent: #f2b33d;
+  --accent-strong: #ffc65c;
+  --accent-ink: #14120f;
+  --accent-dim: rgba(242, 179, 61, 0.14);
+  --accent-glow: rgba(242, 179, 61, 0.32);
+
+  --good: #9bcf6a;
+  --good-dim: rgba(155, 207, 106, 0.14);
+  --bad: #e5654f;
+  --bad-dim: rgba(229, 101, 79, 0.14);
+  --info: #7fb4d6;
+  --info-dim: rgba(127, 180, 214, 0.14);
+
+  --line-faint: rgba(236, 232, 225, 0.05);
+  --line: rgba(236, 232, 225, 0.09);
+  --line-strong: rgba(236, 232, 225, 0.18);
+
+  /* Layered: ambient (large, soft) + direct (small, crisp). Never one flat drop. */
+  --shadow-1: 0 1px 1px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.25), 0 12px 32px -8px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 10px rgba(0, 0, 0, 0.3), 0 24px 56px -16px rgba(0, 0, 0, 0.6);
+  --shadow-3: 0 2px 4px rgba(0, 0, 0, 0.45), 0 8px 24px rgba(0, 0, 0, 0.35), 0 40px 90px -24px rgba(0, 0, 0, 0.7);
+  --inset-hi: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  /* Nested radii: child always smaller than parent. */
+  --r-0: 2px;
+  --r-1: 4px;
+  --r-2: 6px;
+  --r-3: 10px;
+  --r-4: 14px;
+
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --dur-4: 480ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  --gutter: 16px;
+  --max-w: 1440px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 32px;
+  }
+}
+@media (min-width: 1280px) {
+  :root {
+    --gutter: 48px;
+  }
+}

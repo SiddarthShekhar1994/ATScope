@@ -1,0 +1,33 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { parseResumeFile } from '../lib/parse';
+import { scoreResume, buildContext } from '../lib/score';
+import { buildPlan } from '../lib/rewrite/planner';
+import { verifyAndBuild } from '../lib/rewrite/verifier';
+import { composeDocument } from '../lib/rewrite/compose';
+
+const file = process.argv[2];
+const jdFile = process.argv[3];
+void (async () => {
+  const bytes = new Uint8Array(fs.readFileSync(file));
+  const doc = await parseResumeFile(bytes, path.basename(file), 'test');
+  const jd = jdFile ? fs.readFileSync(jdFile, 'utf8') : undefined;
+  const ctx = buildContext(doc, { jd });
+  const result = scoreResume(doc, ctx);
+  const { plan, projectedScore } = buildPlan(doc, result.categories, result.rawTotal);
+  console.log(`\nBASELINE ${result.overallScore}  → PROJECTED ${projectedScore}`);
+  for (const p of plan) console.log(`  [${p.enabled ? 'x' : ' '}]${p.locked ? '🔒' : '  '} +${p.projectedGain.toString().padStart(4)}  ${p.change}${p.detail ? '  — ' + p.detail : ''}`);
+  const t0 = Date.now();
+  const v = await verifyAndBuild(doc, plan, new Set(plan.filter((p) => p.enabled).map((p) => p.id)), null, ctx, undefined, (i, s, note) => console.log(`  iteration ${i}: ${s} — ${note}`));
+  console.log(`\nREWRITE (no model) in ${Date.now() - t0}ms: projected ${v.projected.overallScore}, current (placeholders empty) ${v.current.overallScore}, ${v.placeholders.length} placeholders, ${v.hunks.length} hunks`);
+  console.log('categories:', v.projected.categories.map((c) => `${c.id} ${c.score}`).join(' | '));
+  console.log('engines:', v.projected.perEngineScores.map((e) => `${e.label} ${e.score}`).join(' | '));
+  console.log('notes:', v.notes);
+  const composed = composeDocument({ lines: v.lines, diffs: v.hunks, placeholders: v.placeholders, originalText: Object.fromEntries(doc.lines.map((l) => [l.id, l.text])) });
+  console.log('\n--- COMPOSED ---\n' + composed.text + '\n--- END ---');
+  console.log('\nplaceholders:', v.placeholders.map((p) => `${p.lineId}:${p.token}(+${p.projectedGain})`).join(' '));
+  console.log('\nhunks:');
+  for (const h of v.hunks) console.log(`  ${h.id} ${h.kind.padEnd(6)} orig=[${h.originalLineIds.join(',')}] new=[${h.rewriteLineIds.join(',')}] ${h.reason}`);
+  const weak = v.projected.categories.flatMap((c) => c.findings.slice(0, 3).map((f) => `  ${c.id} -${f.pointCost} "${f.quote.slice(0, 60)}" ${f.explanation.slice(0, 120)}`));
+  console.log('\nremaining findings (projected):\n' + weak.join('\n'));
+})();
