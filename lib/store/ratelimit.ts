@@ -1,6 +1,6 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
-import { kv } from './redis';
+import { kv, upstashCredentials } from './redis';
 
 /**
  * Sliding-window limits on the expensive operations. With Upstash configured we
@@ -27,10 +27,9 @@ const limiters: Partial<Record<LimitKind, Ratelimit>> = {};
 
 export async function enforceLimit(kind: LimitKind, identity: string): Promise<void> {
   const cfg = LIMITS[kind];
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (url && token) {
-    limiters[kind] ??= new Ratelimit({ redis: new Redis({ url, token }), limiter: Ratelimit.slidingWindow(cfg.requests, `${cfg.windowSeconds} s`), prefix: `atscope:rl:${kind}` });
+  const creds = upstashCredentials();
+  if (creds) {
+    limiters[kind] ??= new Ratelimit({ redis: new Redis(creds), limiter: Ratelimit.slidingWindow(cfg.requests, `${cfg.windowSeconds} s`), prefix: `atscope:rl:${kind}` });
     const res = await limiters[kind]!.limit(identity);
     if (!res.success) throw new RateLimitError(kind, Math.max(1, Math.round((res.reset - Date.now()) / 1000)));
     return;

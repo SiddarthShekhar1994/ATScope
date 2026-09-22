@@ -87,11 +87,23 @@ declare global {
   var __atscopeKV: KV | undefined;
 }
 
+/**
+ * Upstash REST credentials. A database created on upstash.com names them
+ * UPSTASH_REDIS_REST_*; Vercel's Upstash integration names them KV_REST_API_*.
+ */
+export function upstashCredentials(): { url: string; token: string } | null {
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  return url && token ? { url, token } : null;
+}
+
 export function kv(): KV {
   if (globalThis.__atscopeKV) return globalThis.__atscopeKV;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  globalThis.__atscopeKV = url && token ? new UpstashKV(new Redis({ url, token })) : new MemoryKV();
+  const creds = upstashCredentials();
+  if (!creds && process.env.NODE_ENV === 'production') {
+    console.warn('[kv] No Upstash credentials, using the in-memory store. That only works on a single long-running server; on Vercel or any serverless host, uploads and sessions will go missing between requests.');
+  }
+  globalThis.__atscopeKV = creds ? new UpstashKV(new Redis(creds)) : new MemoryKV();
   return globalThis.__atscopeKV;
 }
 

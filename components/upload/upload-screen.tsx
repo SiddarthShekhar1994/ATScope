@@ -6,6 +6,7 @@ import { motion, useReducedMotion, AnimatePresence } from 'motion/react';
 import { useTransitionRouter } from 'next-view-transitions';
 import { uploadResume } from '@/app/actions/analysis';
 import { ROLE_PRESETS } from '@/lib/score/keywords/presets';
+import { MAX_FILE_BYTES, MAX_FILE_LABEL } from '@/lib/parse/limits';
 import { FileThumb } from './file-thumb';
 import { Button } from '@/components/ui/button';
 import { IconAlert, IconDoc, IconUpload, IconX } from '@/components/ui/icons';
@@ -19,6 +20,8 @@ const SAMPLES = [
   { file: 'priya-natarajan.docx', label: 'sidebar DOCX with a skills table' },
   { file: 'marcus-oyelaran.docx', label: 'clean single-column DOCX' },
 ];
+
+const tooLarge = (f: File) => `That file is ${(f.size / 1048576).toFixed(1)} MB and the limit is ${MAX_FILE_LABEL}. Export a lighter PDF without photos or scanned pages.`;
 
 /**
  * Full-viewport drop zone. Drag, click, or paste a file; the thumbnail renders
@@ -41,13 +44,24 @@ export function UploadScreen() {
     setError(null);
     if (rejected.length) {
       const r = rejected[0];
+      if (r.errors.some((e) => e.code === 'file-too-large')) {
+        setError(tooLarge(r.file));
+        return;
+      }
       setError(/\.doc$/i.test(r.file.name) ? 'Legacy .doc files are not supported. Re-save as .docx in Word and try again.' : r.errors[0]?.message || 'That file type is not supported. Use PDF or DOCX.');
       return;
     }
-    if (accepted[0]) setFile(accepted[0]);
+    const f = accepted[0];
+    if (!f) return;
+    // Paste skips the drop zone's own checks, so the size check lives here as well.
+    if (f.size > MAX_FILE_BYTES) {
+      setError(tooLarge(f));
+      return;
+    }
+    setFile(f);
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({ onDrop, accept: ACCEPT, maxFiles: 1, multiple: false, noClick: !!file, noKeyboard: true, maxSize: 8 * 1024 * 1024 });
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({ onDrop, accept: ACCEPT, maxFiles: 1, multiple: false, noClick: !!file, noKeyboard: true, maxSize: MAX_FILE_BYTES });
 
   // Paste a file anywhere on the page.
   useEffect(() => {
@@ -74,7 +88,13 @@ export function UploadScreen() {
     if (roleId) fd.append('roleId', roleId);
     startTransition(async () => {
       setPhase('parsing');
-      const res = await uploadResume(fd);
+      // Rejections before the action runs (platform body limit, timeout, network) land here.
+      const res = await uploadResume(fd).catch(() => null);
+      if (!res) {
+        setPhase('idle');
+        setError('The upload did not go through. Check your connection and try again.');
+        return;
+      }
       if (!res.ok) {
         setPhase('idle');
         setError(res.error);
@@ -110,7 +130,7 @@ export function UploadScreen() {
             <Button variant="secondary" onClick={open} size="lg">
               <IconUpload /> Choose file
             </Button>
-            <span className="num text-xs text-fg-2">PDF · DOCX · up to 8 MB</span>
+            <span className="num text-xs text-fg-2">PDF · DOCX · up to {MAX_FILE_LABEL}</span>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-fg-2" onClick={(e) => e.stopPropagation()}>
             <span>No resume handy? Try a sample:</span>

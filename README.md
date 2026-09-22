@@ -17,7 +17,7 @@ Open http://localhost:3000. No signup. With **no environment variables at all** 
 | Variable | Purpose |
 | --- | --- |
 | `AI_MODEL` + `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`, or `AI_GATEWAY_API_KEY`) | Model-written prose: per-finding fixes during analysis, and bullets/summary/skills in the rewrite. Default `anthropic/claude-opus-5`. |
-| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Rate limits and anonymous session state. Without them an in-memory store is used (fine for development, resets on restart). |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (or `KV_REST_API_URL` + `KV_REST_API_TOKEN`, the names Vercel's Upstash integration uses) | Rate limits and anonymous session state. **Required when deployed**: serverless instances don't share memory. Locally, an in-memory store is used without them (resets on restart). |
 | `AUTH_SECRET` + `GITHUB_CLIENT_ID/SECRET` or `GOOGLE_CLIENT_ID/SECRET` | Sign-in, only needed to save versions past the anonymous 7-day window. |
 
 Scripts: `npm run build`, `npm run lint`, and the engine checks under `scripts/`:

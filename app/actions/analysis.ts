@@ -2,7 +2,7 @@
 
 import { createStreamableValue } from '@ai-sdk/rsc';
 import { randomUUID } from 'node:crypto';
-import { parseResumeFile, ParseError, MAX_FILE_BYTES, type ParsedResume } from '@/lib/parse';
+import { parseResumeFile, ParseError, MAX_FILE_BYTES, MAX_FILE_LABEL, type ParsedResume } from '@/lib/parse';
 import { saveDoc, loadDoc, saveAnalysis, loadAnalysis, saveRewrite, loadRewrite, listHistory, saveVersion, listVersions, createShareToken, type HistoryEntry, type VersionRecord } from '@/lib/store/analyses';
 import { getSessionId, clientIp } from '@/lib/store/session';
 import { enforceLimit, RateLimitError } from '@/lib/store/ratelimit';
@@ -26,7 +26,7 @@ export async function uploadResume(formData: FormData): Promise<UploadResult> {
   }
   const file = formData.get('file');
   if (!(file instanceof File)) return { ok: false, error: 'No file received.', code: 'empty' };
-  if (file.size > MAX_FILE_BYTES) return { ok: false, error: 'That file is over 8 MB. Export a lighter PDF.', code: 'too-large' };
+  if (file.size > MAX_FILE_BYTES) return { ok: false, error: `That file is over ${MAX_FILE_LABEL}. Export a lighter PDF.`, code: 'too-large' };
   const jd = String(formData.get('jd') ?? '').slice(0, 20000) || undefined;
   const roleId = String(formData.get('roleId') ?? '') || undefined;
   const id = randomUUID().slice(0, 12);

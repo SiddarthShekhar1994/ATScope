@@ -3,6 +3,7 @@ import { extractDocx } from './docx';
 import { buildParsedResume } from './ats-simulation';
 import { rawFromText } from './from-text';
 import type { ParsedResume, RawExtraction } from './types';
+import { MAX_FILE_BYTES, MAX_FILE_LABEL } from './limits';
 
 export class ParseError extends Error {
   constructor(
@@ -13,7 +14,7 @@ export class ParseError extends Error {
   }
 }
 
-export const MAX_FILE_BYTES = 8 * 1024 * 1024;
+export { MAX_FILE_BYTES, MAX_FILE_LABEL };
 
 export function sniffFileType(bytes: Uint8Array, fileName: string): 'pdf' | 'docx' | 'text' | null {
   if (bytes.length >= 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) return 'pdf';
@@ -25,7 +26,7 @@ export function sniffFileType(bytes: Uint8Array, fileName: string): 'pdf' | 'doc
 }
 
 export async function parseResumeFile(bytes: Uint8Array, fileName: string, id: string): Promise<ParsedResume> {
-  if (bytes.length > MAX_FILE_BYTES) throw new ParseError('That file is over 8 MB. Resumes are usually under 1 MB; export a lighter PDF.', 'too-large');
+  if (bytes.length > MAX_FILE_BYTES) throw new ParseError(`That file is over ${MAX_FILE_LABEL}. Resumes are usually under 1 MB; export a lighter PDF.`, 'too-large');
   const type = sniffFileType(bytes, fileName);
   if (!type) throw new ParseError('Only PDF and DOCX files are supported. Legacy .doc files need to be re-saved as .docx.', 'unsupported');
   const started = Date.now();
