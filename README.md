@@ -30,6 +30,21 @@ npx tsx scripts/roundtrip-check.ts samples/decent-single.docx   # export → re-
 npx tsx scripts/build-demo.ts                         # freeze a real run into lib/demo/sample.json for the landing demo
 ```
 
+## Deploy
+
+Vercel builds the repository as-is (framework preset Next.js, no settings to change).
+
+1. **Import** the repository at vercel.com → Add New → Project, and deploy.
+2. **Connect Redis (required).** Serverless instances don't share memory, so without Redis an upload saved by one request can be missing on the next. In the project's **Storage** tab, create an **Upstash for Redis** database and connect it to the project. The app reads either naming: `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Vercel's integration) or `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (a database made on upstash.com). If neither pair is set in production, the server logs a `[kv]` warning.
+3. **Optionally add a model key:** `ANTHROPIC_API_KEY`, plus `AI_MODEL` to change the default. Without one, everything works and the rewrite uses the rule-based pass.
+4. **Redeploy** after changing environment variables; they only apply to new deployments.
+
+For sign-in, set `AUTH_SECRET` (for example the output of `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`) and register an OAuth app per provider with the callback `https://<your-domain>/auth/github/callback` or `https://<your-domain>/auth/google/callback`. Every origin you sign in from (localhost, the `.vercel.app` URL, a custom domain) needs its callback registered; a GitHub OAuth app holds only one, so use one app per origin.
+
+Uploads are capped at 4 MB (`lib/parse/limits.ts`), under Vercel's 4.5 MB request-body limit; `next.config.ts` raises Next's 1 MB server-action default to match. Uploads, analyses and rewrites are rate-limited per anonymous session: 30, 20 and 10 an hour (`lib/store/ratelimit.ts`). With a model key set, every analysis and rewrite is billed to it, so set a spend limit with the provider before sharing a public URL.
+
+Any other Node host works with `npm run build` then `npm start`. On a single long-running server the in-memory store is acceptable (it resets on restart); on anything serverless or multi-instance, configure Upstash.
+
 ## How it works
 
 1. **Parse like an ATS actually parses.** `lib/parse/pdf.ts` keeps every text run with its page box and content-stream position (via unpdf/pdf.js). `lib/parse/docx.ts` reads WordprocessingML directly with JSZip, so headers, footers, text boxes, tables and layout tables are *seen* — precisely so we can report them as lost. `lib/parse/ats-simulation.ts` builds two views of the same document: the human view (geometry, columns, entries) and the **ATS view** — the text as a position-sorting parser linearises it, columns merged line by line, header text gone, tables flattened. Every dropped element and reading-order issue is recorded with the lines it affects.
